@@ -1,9 +1,10 @@
 // src/pages/dashboard/PlanoAlimentarPage.tsx
 import { useState, useMemo } from 'react';
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Pencil } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { AddFoodModal } from '../../components/plano/AddFoodModal';
+import { EditFoodModal } from '../../components/plano/EditFoodModal';
 import type { Alimento } from '../../utils/foodDatabase';
 
 interface AlimentoNoPlano extends Alimento {
@@ -23,47 +24,69 @@ type PlanoAlimentar = {
 const metas = { metaCalorica: 1800, proteinas: 130, carboidratos: 180, gorduras: 60 };
 
 export function PlanoAlimentarPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [refeicaoAtual, setRefeicaoAtual] = useState<keyof PlanoAlimentar | null>(null);
+  const [editingFood, setEditingFood] = useState<{ refeicao: keyof PlanoAlimentar; index: number; } | null>(null);
+
   const [plano, setPlano] = useState<PlanoAlimentar>({
-    'Café da Manhã': [],
-    'Almoço': [],
-    'Jantar': [],
+    'Café da Manhã': [], 'Almoço': [], 'Jantar': [],
   });
 
-  const handleOpenModal = (refeicao: keyof PlanoAlimentar) => {
+  const handleOpenAddModal = (refeicao: keyof PlanoAlimentar) => {
     setRefeicaoAtual(refeicao);
-    setIsModalOpen(true);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEditModal = (refeicao: keyof PlanoAlimentar, index: number) => {
+    setEditingFood({ refeicao, index });
+    setIsEditModalOpen(true);
   };
 
   const handleAddFood = (alimento: Alimento, quantidade: number) => {
     if (!refeicaoAtual) return;
-
-    let fator = quantidade;
-    if (alimento.unidadeDeMedida === 'g') {
-        fator = quantidade / 100; // Calcula com base em 100g
-    }
-
+    const fator = (alimento.unidadeDeMedida === 'g') ? quantidade / 100 : quantidade;
     const novoAlimento: AlimentoNoPlano = {
-        ...alimento,
-        quantidade,
+        ...alimento, quantidade,
         totalKcal: alimento.kcal * fator,
         totalProteinas: alimento.proteinas * fator,
         totalCarboidratos: alimento.carboidratos * fator,
         totalGorduras: alimento.gorduras * fator,
     };
+    setPlano(p => ({ ...p, [refeicaoAtual]: [...p[refeicaoAtual], novoAlimento] }));
+  };
 
-    setPlano(planoAnterior => ({
-      ...planoAnterior,
-      [refeicaoAtual]: [...planoAnterior[refeicaoAtual], novoAlimento]
-    }));
+  const handleUpdateFood = (novaQuantidade: number) => {
+    if (!editingFood) return;
+    const { refeicao, index } = editingFood;
+
+    setPlano(p => {
+        const planoAtualizado = { ...p };
+        const alimentosDaRefeicao = [...planoAtualizado[refeicao]];
+        const alimentoParaAtualizar = alimentosDaRefeicao[index];
+
+        const fator = (alimentoParaAtualizar.unidadeDeMedida === 'g') ? novaQuantidade / 100 : novaQuantidade;
+
+        const alimentoAtualizado: AlimentoNoPlano = {
+            ...alimentoParaAtualizar,
+            quantidade: novaQuantidade,
+            totalKcal: alimentoParaAtualizar.kcal * fator,
+            totalProteinas: alimentoParaAtualizar.proteinas * fator,
+            totalCarboidratos: alimentoParaAtualizar.carboidratos * fator,
+            totalGorduras: alimentoParaAtualizar.gorduras * fator,
+        };
+
+        alimentosDaRefeicao[index] = alimentoAtualizado;
+        planoAtualizado[refeicao] = alimentosDaRefeicao;
+        return planoAtualizado;
+    });
+
+    setIsEditModalOpen(false);
+    setEditingFood(null);
   };
 
   const handleRemoveFood = (refeicao: keyof PlanoAlimentar, index: number) => {
-    setPlano(planoAnterior => ({
-        ...planoAnterior,
-        [refeicao]: planoAnterior[refeicao].filter((_, i) => i !== index)
-    }));
+    setPlano(p => ({ ...p, [refeicao]: p[refeicao].filter((_, i) => i !== index) }));
   };
 
   const totais = useMemo(() => {
@@ -86,15 +109,16 @@ export function PlanoAlimentarPage() {
             <Card
               key={refeicao}
               title={refeicao}
-              actions={<Button onClick={() => handleOpenModal(refeicao)} className="text-xs !p-2"><PlusCircle size={16} className="mr-2" /> Adicionar Alimento</Button>}
+              actions={<Button onClick={() => handleOpenAddModal(refeicao)} className="text-xs !p-2"><PlusCircle size={16} className="mr-2" /> Adicionar Alimento</Button>}
             >
               {plano[refeicao].length > 0 ? (
                 <ul className="space-y-2">
                     {plano[refeicao].map((alimento, index) => (
                         <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-gray-50">
                             <span>{alimento.nome} - {alimento.quantidade}{alimento.unidadeDeMedida === 'g' ? 'g' : (alimento.quantidade > 1 ? ' unidades' : ' unidade')}</span>
-                            <div className='flex items-center gap-2 text-gray-500'>
+                            <div className='flex items-center gap-4 text-gray-500'>
                                 <span>{Math.round(alimento.totalKcal)} kcal</span>
+                                <button onClick={() => handleOpenEditModal(refeicao, index)} className="text-blue-500 hover:text-blue-700"><Pencil size={16} /></button>
                                 <button onClick={() => handleRemoveFood(refeicao, index)} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
                             </div>
                         </li>
@@ -120,7 +144,13 @@ export function PlanoAlimentarPage() {
           </div>
         </aside>
       </div>
-      <AddFoodModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAddFood={handleAddFood} />
+      <AddFoodModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAddFood={handleAddFood} />
+      <EditFoodModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onUpdateFood={handleUpdateFood}
+        alimento={editingFood ? plano[editingFood.refeicao][editingFood.index] : null}
+      />
     </div>
   );
 }

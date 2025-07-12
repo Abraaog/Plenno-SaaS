@@ -8,23 +8,18 @@ import { Button } from '../ui/Button';
 import { foodDatabase, type Alimento } from '../../utils/foodDatabase';
 import { Search } from 'lucide-react';
 
- const addFoodSchema = z.object({
-   alimentoId: z.string().min(1, "Por favor, selecione um alimento."),
-   quantidade: z.string()
-     .refine(val => {
-       const num = parseFloat(val.replace(',', '.'));
-       return !isNaN(num) && num > 0;
-     }, {
-       message: "A quantidade deve ser um número positivo."
-     }),
- });
+const addFoodSchema = z.object({
+  alimentoId: z.string().min(1, "Por favor, selecione um alimento."),
+  quantidade: z.string()
+    .refine(val => {
+      const num = parseFloat(val.replace(',', '.'));
+      return !isNaN(num) && num > 0;
+    }, {
+      message: "A quantidade deve ser um número positivo."
+    }),
+});
 
- type FormInputs = z.infer<typeof addFoodSchema>;
-
- type ProcessedFoodData = {
-   alimentoId: number;
-   quantidade: number;
- };
+type FormInputs = z.infer<typeof addFoodSchema>;
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -43,12 +38,12 @@ export function AddFoodModal({ isOpen, onClose, onAddFood }: AddFoodModalProps) 
   const watchedAlimentoId = watch("alimentoId");
 
   useEffect(() => {
-     if (watchedAlimentoId) {
-         const food = foodDatabase.find(f => f.id === Number(watchedAlimentoId));
-         setSelectedFoodUnit(food?.unidadeDeMedida ?? null);
-     } else {
-         setSelectedFoodUnit(null);
-     }
+    if (watchedAlimentoId) {
+        const food = foodDatabase.find(f => f.id === Number(watchedAlimentoId));
+        setSelectedFoodUnit(food?.unidadeDeMedida ?? null);
+    } else {
+        setSelectedFoodUnit(null);
+    }
   }, [watchedAlimentoId]);
 
   const filteredFood = useMemo(() => {
@@ -59,17 +54,12 @@ export function AddFoodModal({ isOpen, onClose, onAddFood }: AddFoodModalProps) 
   }, [searchTerm]);
 
   const onSubmit: SubmitHandler<FormInputs> = (formData) => {
-     const processedData: ProcessedFoodData = {
-       alimentoId: parseInt(formData.alimentoId, 10),
-       quantidade: parseFloat(formData.quantidade.replace(',', '.'))
-     };
-
     const alimentoSelecionado = foodDatabase.find(food => 
-     food.id === processedData.alimentoId
+      food.id === parseInt(formData.alimentoId, 10)
     );
     
     if (alimentoSelecionado) {
-      onAddFood(alimentoSelecionado, processedData.quantidade);
+      onAddFood(alimentoSelecionado, parseFloat(formData.quantidade.replace(',', '.')));
       reset();
       setSearchTerm('');
       onClose();
@@ -96,7 +86,6 @@ export function AddFoodModal({ isOpen, onClose, onAddFood }: AddFoodModalProps) 
           className="w-full px-10 py-2 border border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500"
         />
       </div>
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="alimentoId" className="block text-sm font-medium text-gray-700">Alimento</label>
@@ -118,7 +107,7 @@ export function AddFoodModal({ isOpen, onClose, onAddFood }: AddFoodModalProps) 
         </div>
         <div>
           <label htmlFor="quantidade" className="block text-sm font-medium text-gray-700">
-             Quantidade ({selectedFoodUnit === 'unidade' ? 'unidades' : 'g'})
+            Quantidade ({selectedFoodUnit === 'unidade' ? 'unidades' : 'g'})
           </label>
           <input 
             id="quantidade" 
