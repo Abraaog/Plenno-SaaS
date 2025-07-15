@@ -2,8 +2,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AlunosPage } from './pages/dashboard/AlunosPage';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Importando os layouts
 import { DashboardLayout } from './layouts/DashboardLayout'
@@ -15,6 +17,9 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { SignupPage } from './pages/auth/SignupPage'
 import { AlunoDetailPage } from './pages/dashboard/AlunoDetailPage';
 import { PlanoAlimentarPage } from './pages/dashboard/PlanoAlimentarPage';
+import { FichasDeTreinoPage } from './pages/dashboard/FichasDeTreinoPage';
+import { AgendaPage } from './pages/dashboard/AgendaPage';
+import { AdminPage } from './pages/dashboard/AdminPage'
 
 const router = createBrowserRouter([
   // Rotas do Dashboard (área logada)
@@ -38,6 +43,26 @@ const router = createBrowserRouter([
         path: "alunos/:alunoId/plano-alimentar", // Nova rota aninhada
         element: <PlanoAlimentarPage />,
       },
+      {
+        path: "fichas-de-treino",
+        element: <FichasDeTreinoPage />,
+      },
+      {
+        path: "agenda",
+        element: <AgendaPage />,
+      },
+      {
+        path: "admin",
+        element: <AdminPage />, // Rota para a página de administração
+      },
+      {
+
+        path: "alunos/:alunoId/fichas-de-treino",
+
+        element: <FichasDeTreinoPage />,
+
+},
+
     ],
   },
   // Rotas de Autenticação
@@ -58,6 +83,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </React.StrictMode>,
 )

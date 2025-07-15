@@ -1,11 +1,13 @@
 // src/pages/dashboard/PlanoAlimentarPage.tsx
 import { useState, useMemo } from 'react';
-import { PlusCircle, Trash2, Pencil } from "lucide-react";
+import { Link, useParams } from 'react-router-dom';
+import { PlusCircle, Trash2, Pencil, ArrowLeft } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { AddFoodModal } from '../../components/plano/AddFoodModal';
 import { EditFoodModal } from '../../components/plano/EditFoodModal';
 import type { Alimento } from '../../utils/foodDatabase';
+import { gerarPlanoPDF } from '../../utils/pdfGenerator';
 
 interface AlimentoNoPlano extends Alimento {
   quantidade: number;
@@ -24,6 +26,7 @@ type PlanoAlimentar = {
 const metas = { metaCalorica: 1800, proteinas: 130, carboidratos: 180, gorduras: 60 };
 
 export function PlanoAlimentarPage() {
+  const { alunoId } = useParams<{ alunoId: string }>();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [refeicaoAtual, setRefeicaoAtual] = useState<keyof PlanoAlimentar | null>(null);
@@ -102,7 +105,12 @@ export function PlanoAlimentarPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Montagem do Plano - [Nome do Aluno]</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <Link to={`/alunos/${alunoId}`} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
+          <ArrowLeft size={24} className="text-gray-600" />
+        </Link>
+        <h1 className="text-3xl font-bold text-gray-800">Montagem do Plano - [Nome do Aluno]</h1>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 space-y-6">
           {(Object.keys(plano) as Array<keyof PlanoAlimentar>).map(refeicao => (
@@ -140,7 +148,17 @@ export function PlanoAlimentarPage() {
               <hr/>
               <div className="flex justify-between font-bold text-lg text-cyan-600"><span>Total de Calorias</span><span>{Math.round(totais.kcal)} kcal</span></div>
             </div>
-            <Button className="w-full mt-6">Salvar e Gerar PDF</Button>
+            <Button 
+              className="w-full mt-6"
+              onClick={() => gerarPlanoPDF(
+                plano, 
+                { nome: 'Ana Silva' }, // Dados fictícios do aluno
+                metas, 
+                totais
+              )}
+            >
+              Salvar e Gerar PDF
+            </Button>
           </div>
         </aside>
       </div>
